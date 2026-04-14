@@ -1,0 +1,86 @@
+<?php
+/**
+ * SNIPPET DE GESTÃO - Agência Arkhos (Versão Final sem erro 404)
+ * Shortcode: [gestao_anamnese]
+ */
+add_shortcode('gestao_anamnese', 'arkhos_gestao_total');
+
+function arkhos_gestao_total() {
+    if (!current_user_can('manage_options')) return 'Acesso Restrito.';
+    
+    global $wpdb;
+    $tabela = 'formulario_anamnese';
+    
+    // Pegamos a URL da página atual sem os parâmetros (?delete_id, etc)
+    $url_limpa = strtok($_SERVER["REQUEST_URI"], '?');
+    $url_final = home_url($url_limpa);
+
+    // --- AÇÃO DE EXCLUIR ---
+    if (isset($_GET['delete_id'])) {
+        $id_del = intval($_GET['delete_id']);
+        $wpdb->delete($tabela, array('id' => $id_del));
+        
+        // Forçamos o redirecionamento via JS para a URL limpa da página
+        echo "<script>
+            alert('Registro excluído com sucesso!');
+            window.location.href = '$url_final';
+        </script>";
+        exit;
+    }
+
+    // --- AÇÃO DE VISUALIZAR DETALHES ---
+    if (isset($_GET['view_id'])) {
+        $id_view = intval($_GET['view_id']);
+        $p = $wpdb->get_row($wpdb->prepare("SELECT * FROM $tabela WHERE id = %d", $id_view));
+        
+        if ($p) {
+            $res = '<div style="background:#fff; padding:30px; border:2px solid #1a2a3a; border-radius:10px; font-family:sans-serif; margin-bottom:30px;">';
+            $res .= '<button onclick="window.location.href=\''.$url_final.'\'" style="float:right; background:#e74c3c; color:#fff; border:none; padding:10px; cursor:pointer; border-radius:5px; font-weight:bold;">FECHAR X</button>';
+            $res .= '<h2 style="color:#1a2a3a; border-bottom:2px solid #3498db; padding-bottom:10px;">DETALHES DO PRONTUÁRIO</h2>';
+            
+            foreach($p as $campo => $valor) {
+                if(!empty($valor)) {
+                    $label = ucwords(str_replace('_', ' ', $campo));
+                    $res .= '<p style="margin:8px 0; border-bottom:1px solid #f0f0f0; padding-bottom:4px;">';
+                    $res .= '<strong style="color:#3498db;">'.$label.':</strong> '.nl2br(esc_html($valor));
+                    $res .= '</p>';
+                }
+            }
+            $res .= '</div>'; 
+            return $res;
+        }
+    }
+
+    // --- LISTAGEM NA TABELA ---
+    $resultados = $wpdb->get_results("SELECT id, nome_completo, whatsapp, data_cadastro FROM $tabela ORDER BY id DESC");
+    
+    $out = '<h3 style="font-family:sans-serif;">Lista de Pacientes Cadastrados</h3>';
+    $out .= '<table style="width:100%; border-collapse:collapse; background:#fff; font-family:sans-serif; box-shadow:0 2px 5px rgba(0,0,0,0.1);">';
+    $out .= '<thead style="background:#1a2a3a; color:#fff;"><tr>';
+    $out .= '<th style="padding:12px; text-align:left;">Paciente</th>';
+    $out .= '<th style="padding:12px; text-align:center;">Ações</th>';
+    $out .= '</tr></thead><tbody>';
+    
+    if($resultados) {
+        foreach($resultados as $r) {
+            // Criamos os links garantindo que o WP entenda a rota
+            $link_view = add_query_arg('view_id', $r->id, $url_final);
+            $link_del = add_query_arg('delete_id', $r->id, $url_final);
+
+            $out .= '<tr style="border-bottom:1px solid #ddd;">';
+            $out .= '<td style="padding:12px;">';
+            $out .= '<strong style="color:#2c3e50;">'.esc_html($r->nome_completo).'</strong><br>';
+            $out .= '<small style="color:#7f8c8d;">WhatsApp: '.esc_html($r->whatsapp).' | '.date('d/m/Y', strtotime($r->data_cadastro)).'</small>';
+            $out .= '</td>';
+            $out .= '<td style="padding:12px; text-align:center; white-space:nowrap;">';
+            $out .= '<a href="'.$link_view.'" style="background:#27ae60; color:#fff; padding:8px 12px; text-decoration:none; border-radius:4px; margin-right:5px; font-size:12px; font-weight:bold;">VER FICHA</a>';
+            $out .= '<a href="'.$link_del.'" onclick="return confirm(\'Tem certeza que deseja excluir permanentemente?\')" style="background:#e74c3c; color:#fff; padding:8px 12px; text-decoration:none; border-radius:4px; font-size:12px; font-weight:bold;">EXCLUIR</a>';
+            $out .= '</td></tr>';
+        }
+    } else {
+        $out .= '<tr><td colspan="2" style="padding:20px; text-align:center;">Nenhum registro encontrado.</td></tr>';
+    }
+    
+    $out .= '</tbody></table>';
+    return $out;
+}

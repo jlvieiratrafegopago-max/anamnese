@@ -1,0 +1,45 @@
+<?php
+/**
+ * SNIPPET DE CADASTRO - Agência Arkhos
+ */
+add_action('admin_post_nopriv_processa_anamnese', 'salvar_dados_anamnese_arkhos');
+add_action('admin_post_processa_anamnese', 'salvar_dados_anamnese_arkhos');
+
+function salvar_dados_anamnese_arkhos() {
+    global $wpdb;
+    $tabela = 'formulario_anamnese';
+
+    if (isset($_POST['nome_completo'])) {
+        $dados = array(
+            'nome_completo'         => sanitize_text_field($_POST['nome_completo']),
+            'cpf_rg'                => sanitize_text_field($_POST['cpf_rg']),
+            'data_nascimento'       => $_POST['data_nascimento'],
+            'endereco'              => sanitize_textarea_field($_POST['endereco']),
+            'whatsapp'              => sanitize_text_field($_POST['whatsapp']),
+            'email'                 => sanitize_email($_POST['email']),
+            'contato_emergencia'    => sanitize_text_field($_POST['contato_emergencia']),
+            'profissao'             => sanitize_text_field($_POST['profissao']),
+            'historico_cirurgias'   => sanitize_textarea_field($_POST['historico_cirurgias']),
+            'doencas_cronicas'      => sanitize_textarea_field($_POST['doencas_cronicas']),
+            'alergias'              => sanitize_textarea_field($_POST['alergias']),
+            'medicamentos_uso'      => sanitize_textarea_field($_POST['medicamentos_uso']),
+            'vicios'                => sanitize_textarea_field($_POST['vicios']),
+            'tipo_sanguineo'        => sanitize_text_field($_POST['tipo_sanguineo']),
+            'oscilacao_peso'        => sanitize_textarea_field($_POST['oscilacao_peso']),
+            'queixa_principal'      => sanitize_textarea_field($_POST['queixa_principal']),
+            'expectativa_resultado' => sanitize_textarea_field($_POST['expectativa_resultado']),
+            'saude_mental'          => sanitize_textarea_field($_POST['saude_mental']),
+            'como_conheceu'         => sanitize_text_field($_POST['como_conheceu']),
+            'autorizacao_imagem'    => isset($_POST['autorizacao_imagem']) ? 'Sim' : 'Não',
+            'consentimento_lgpd'    => isset($_POST['consentimento_lgpd']) ? 'Sim' : 'Não'
+        );
+
+        $wpdb->insert($tabela, $dados);
+
+        echo "<script>
+            alert('✅ PRONTUÁRIO SALVO COM SUCESSO!');
+            window.location.href = 'https://contato.agenciaarkhos.com/clinica';
+        </script>";
+        exit;
+    }
+}
